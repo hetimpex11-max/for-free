@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#6366f1">
+    <title>Invoice Pro - Mobile & Desktop Invoice Manager</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- External Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+    <!-- Mobile Bottom Navigation -->
+    <nav class="mobile-nav">
+        <button class="mobile-nav-item active" data-page="dashboard">
+            <span class="nav-icon">📊</span>
+            <span class="nav-label">Home</span>
+        </button>
+        <button class="mobile-nav-item" data-page="invoices">
+            <span class="nav-icon">📄</span>
+            <span class="nav-label">Invoices</span>
+        </button>
+        <button class="mobile-nav-item fab" data-page="new-invoice">
+            <span class="nav-icon">+</span>
+        </button>
+        <button class="mobile-nav-item" data-page="clients">
+            <span class="nav-icon">👥</span>
+            <span class="nav-label">Clients</span>
+        </button>
+        <button class="mobile-nav-item" data-page="settings">
+            <span class="nav-icon">⚙️</span>
+            <span class="nav-label">Settings</span>
+        </button>
+    </nav>
+
+    <!-- Desktop Sidebar -->
+    <aside class="desktop-sidebar">
+        <div class="sidebar-header">
+            <div class="brand">
+                <span class="brand-icon">💼</span>
+                <span class="brand-name">Invoice Pro</span>
+            </div>
+        </div>
+        <nav class="sidebar-menu">
+            <button class="sidebar-item active" data-page="dashboard">
+                <span class="nav-icon">📊</span>
+                <span>Dashboard</span>
+            </button>
+            <button class="sidebar-item" data-page="invoices">
+                <span class="nav-icon">📄</span>
+                <span>Invoices</span>
+            </button>
+            <button class="sidebar-item" data-page="clients">
+                <span class="nav-icon">👥</span>
+                <span>Clients</span>
+            </button>
+            <button class="sidebar-item" data-page="settings">
+                <span class="nav-icon">⚙️</span>
+                <span>Settings</span>
+            </button>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-card">
+                <div class="user-avatar" id="sidebarAvatar">U</div>
+                <div class="user-info">
+                    <div class="user-name" id="sidebarUserName">User</div>
+                    <div class="user-email" id="sidebarUserEmail">user@email.com</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main App Container -->
+    <div class="app-container">
+        <!-- Dashboard Page -->
+        <div class="page active" id="dashboard-page">
+            <header class="page-header">
+                <h1 class="page-title">Dashboard</h1>
+                <button class="header-btn" onclick="app.quickAction('new-invoice')">
+                    <span>+ Invoice</span>
+                </button>
+            </header>
+
+            <div class="page-content">
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card primary">
+                        <div class="stat-content">
+                            <div class="stat-label">Total Revenue</div>
+                            <div class="stat-value" id="totalRevenue">₹0</div>
+                            <div class="stat-change positive" id="revenueChange">+0%</div>
+                        </div>
+                        <div class="stat-icon">💰</div>
+                    </div>
+
+                    <div class="stat-card success">
+                        <div class="stat-content">
+                            <div class="stat-label">Paid</div>
+                            <div class="stat-value" id="paidCount">0</div>
+                            <div class="stat-subtitle" id="paidAmount">₹0</div>
+                        </div>
+                        <div class="stat-icon">✅</div>
+                    </div>
+
+                    <div class="stat-card warning">
+                        <div class="stat-content">
+                            <div class="stat-label">Pending</div>
+                            <div class="stat-value" id="pendingCount">0</div>
+                            <div class="stat-subtitle" id="pendingAmount">₹0</div>
+                        </div>
+                        <div class="stat-icon">⏳</div>
+                    </div>
+
+                    <div class="stat-card info">
+                        <div class="stat-content">
+                            <div class="stat-label">Clients</div>
+                            <div class="stat-value" id="clientCount">0</div>
+                            <div class="stat-subtitle">Active</div>
+                        </div>
+                        <div class="stat-icon">👥</div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="quick-actions">
+                    <h2 class="section-title">Quick Actions</h2>
+                    <div class="action-grid">
+                        <button class="action-card" onclick="app.quickAction('new-invoice')">
+                            <span class="action-icon">📝</span>
+                            <span>New Invoice</span>
+                        </button>
+                        <button class="action-card" onclick="app.quickAction('new-client')">
+                            <span class="action-icon">👤</span>
+                            <span>Add Client</span>
+                        </button>
+                        <button class="action-card" onclick="app.quickAction('view-reports')">
+                            <span class="action-icon">📊</span>
+                            <span>Reports</span>
+                        </button>
+                        <button class="action-card" onclick="app.quickAction('export')">
+                            <span class="action-icon">📥</span>
+                            <span>Export</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Recent Invoices -->
+                <div class="recent-section">
+                    <h2 class="section-title">Recent Invoices</h2>
+                    <div class="invoice-list" id="recentInvoices">
+                        <!-- Recent invoices will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Invoices Page -->
+        <div class="page" id="invoices-page">
+            <header class="page-header">
+                <h1 class="page-title">Invoices</h1>
+                <button class="header-btn" onclick="app.showNewInvoice()">
+                    <span>+ New</span>
+                </button>
+            </header>
+
+            <div class="page-content">
+                <!-- Search and Filter -->
+                <div class="search-filter">
+                    <input type="search" class="search-bar" placeholder="Search invoices..." id="invoiceSearch">
+                    <select class="filter-select" id="statusFilter">
+                        <option value="all">All Status</option>
+                        <option value="draft">Draft</option>
+                        <option value="sent">Sent</option>
+                        <option value="paid">Paid</option>
+                        <option value="overdue">Overdue</option>
+                    </select>
+                </div>
+
+                <!-- Invoice List -->
+                <div class="invoice-list" id="invoiceList">
+                    <!-- Invoices will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Clients Page -->
+        <div class="page" id="clients-page">
+            <header class="page-header">
+                <h1 class="page-title">Clients</h1>
+                <button class="header-btn" onclick="app.showNewClient()">
+                    <span>+ Add</span>
+                </button>
+            </header>
+
+            <div class="page-content">
+                <!-- Search -->
+                <div class="search-filter">
+                    <input type="search" class="search-bar" placeholder="Search clients..." id="clientSearch">
+                </div>
+
+                <!-- Client List -->
+                <div class="client-list" id="clientList">
+                    <!-- Clients will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Page -->
+        <div class="page" id="settings-page">
+            <header class="page-header">
+                <h1 class="page-title">Settings</h1>
+            </header>
+
+            <div class="page-content">
+                <!-- Profile Section -->
+                <div class="settings-section">
+                    <h2 class="section-title">Profile</h2>
+                    <div class="settings-card">
+                        <div class="setting-item">
+                            <label>Business Name</label>
+                            <input type="text" id="businessName" placeholder="Your Business Name">
+                        </div>
+                        <div class="setting-item">
+                            <label>Email</label>
+                            <input type="email" id="businessEmail" placeholder="email@example.com">
+                        </div>
+                        <div class="setting-item">
+                            <label>Phone</label>
+                            <input type="tel" id="businessPhone" placeholder="+91 98765 43210">
+                        </div>
+                        <div class="setting-item">
+                            <label>Address</label>
+                            <textarea id="businessAddress" rows="3" placeholder="Business Address"></textarea>
+                        </div>
+                        <div class="setting-item">
+                            <label>GST Number</label>
+                            <input type="text" id="businessGST" placeholder="GST Number (Optional)">
+                        </div>
+                        <button class="btn btn-primary" onclick="app.saveProfile()">Save Profile</button>
+                    </div>
+                </div>
+
+                <!-- Payment Section -->
+                <div class="settings-section">
+                    <h2 class="section-title">Payment Details</h2>
+                    <div class="settings-card">
+                        <div class="setting-item">
+                            <label>UPI ID</label>
+                            <input type="text" id="upiId" placeholder="yourname@upi">
+                        </div>
+                        <div class="setting-item">
+                            <label>Bank Name</label>
+                            <input type="text" id="bankName" placeholder="Bank Name">
+                        </div>
+                        <div class="setting-item">
+                            <label>Account Number</label>
+                            <input type="text" id="accountNumber" placeholder="Account Number">
+                        </div>
+                        <div class="setting-item">
+                            <label>IFSC Code</label>
+                            <input type="text" id="ifscCode" placeholder="IFSC Code">
+                        </div>
+                        <button class="btn btn-primary" onclick="app.savePayment()">Save Payment</button>
+                    </div>
+                </div>
+
+                <!-- Invoice Settings -->
+                <div class="settings-section">
+                    <h2 class="section-title">Invoice Settings</h2>
+                    <div class="settings-card">
+                        <div class="setting-item">
+                            <label>Currency</label>
+                            <select id="currency">
+                                <option value="₹">INR (₹)</option>
+                                <option value="$">USD ($)</option>
+                                <option value="€">EUR (€)</option>
+                                <option value="£">GBP (£)</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label>Default Tax Rate (%)</label>
+                            <input type="number" id="defaultTaxRate" value="18" min="0" max="100">
+                        </div>
+                        <div class="setting-item">
+                            <label>Invoice Prefix</label>
+                            <input type="text" id="invoicePrefix" value="INV-" placeholder="INV-">
+                        </div>
+                        <div class="setting-item">
+                            <label>Payment Terms (Days)</label>
+                            <input type="number" id="paymentTerms" value="30" min="0">
+                        </div>
+                        <button class="btn btn-primary" onclick="app.saveInvoiceSettings()">Save Settings</button>
+                    </div>
+                </div>
+
+                <!-- App Settings -->
+                <div class="settings-section">
+                    <h2 class="section-title">App Settings</h2>
+                    <div class="settings-card">
+                        <div class="setting-item toggle-item">
+                            <div>
+                                <label>Dark Mode</label>
+                                <small>Use dark theme</small>
+                            </div>
+                            <label class="toggle">
+                                <input type="checkbox" id="darkModeToggle" onchange="app.toggleDarkMode()">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <button class="btn btn-secondary" onclick="app.exportData()">
+                                📥 Export All Data
+                            </button>
+                        </div>
+                        <div class="setting-item">
+                            <button class="btn btn-danger" onclick="app.clearData()">
+                                🗑️ Clear All Data
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Invoice Modal -->
+    <div class="modal" id="newInvoiceModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>New Invoice</h2>
+                <button class="modal-close" onclick="app.closeModal('newInvoiceModal')">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="invoiceForm">
+                    <!-- Client Selection -->
+                    <div class="form-group">
+                        <label>Client</label>
+                        <select id="invoiceClient" required>
+                            <option value="">Select Client</option>
+                        </select>
+                    </div>
+
+                    <!-- Invoice Details -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Invoice Number</label>
+                            <input type="text" id="invoiceNumber" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Date</label>
+                            <input type="date" id="invoiceDate" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Due Date</label>
+                        <input type="date" id="invoiceDueDate" required>
+                    </div>
+
+                    <!-- Line Items -->
+                    <div class="line-items-section">
+                        <h3>Items</h3>
+                        <div id="lineItems">
+                            <!-- Line items will be added here -->
+                        </div>
+                        <button type="button" class="btn btn-secondary" onclick="app.addLineItem()">
+                            + Add Item
+                        </button>
+                    </div>
+
+                    <!-- Calculation Section -->
+                    <div class="calculation-section">
+                        <div class="calc-row">
+                            <span>Subtotal:</span>
+                            <span id="calcSubtotal">₹0.00</span>
+                        </div>
+                        <div class="calc-row">
+                            <span>Tax (<span id="taxRateDisplay">18</span>%):</span>
+                            <input type="number" id="taxPercent" value="18" min="0" max="100" onchange="app.recalculate()">
+                        </div>
+                        <div class="calc-row">
+                            <span>Tax Amount:</span>
+                            <span id="calcTax">₹0.00</span>
+                        </div>
+                        <div class="calc-row">
+                            <span>Discount:</span>
+                            <input type="number" id="discountAmount" value="0" min="0" onchange="app.recalculate()">
+                        </div>
+                        <div class="calc-row total">
+                            <span>Total:</span>
+                            <span id="calcTotal">₹0.00</span>
+                        </div>
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="form-group">
+                        <label>Notes</label>
+                        <textarea id="invoiceNotes" rows="3" placeholder="Additional notes..."></textarea>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" onclick="app.saveAsDraft()">
+                            Save as Draft
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            Create Invoice
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Client Modal -->
+    <div class="modal" id="newClientModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>New Client</h2>
+                <button class="modal-close" onclick="app.closeModal('newClientModal')">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="clientForm">
+                    <div class="form-group">
+                        <label>Client Name</label>
+                        <input type="text" id="clientName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="clientEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Phone</label>
+                        <input type="tel" id="clientPhone">
+                    </div>
+                    <div class="form-group">
+                        <label>Address</label>
+                        <textarea id="clientAddress" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>GST Number</label>
+                        <input type="text" id="clientGST">
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" onclick="app.closeModal('newClientModal')">
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            Add Client
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invoice Preview Modal -->
+    <div class="modal" id="previewModal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2>Invoice Preview</h2>
+                <button class="modal-close" onclick="app.closeModal('previewModal')">×</button>
+            </div>
+            <div class="modal-body">
+                <div id="invoicePreview">
+                    <!-- Invoice preview will be rendered here -->
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-secondary" onclick="app.closeModal('previewModal')">
+                        Close
+                    </button>
+                    <button class="btn btn-primary" onclick="app.downloadPDF()">
+                        📥 Download PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
